@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
 # Import your forms from the forms.py
-from forms import NewPostForm
+from forms import NewPostForm, RegisterForm
 
 # SETUP FLASK APP
 app = Flask(__name__)
@@ -33,7 +33,7 @@ db.init_app(app)
 
 # CONFIGURE TABLES
 class BlogPost(db.Model):
-    __tablename__ = "blog_posts"
+    __tablename__ = 'blog_posts'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(250), unique=True, nullable=False)
     subtitle = db.Column(db.String(250), nullable=False)
@@ -44,6 +44,11 @@ class BlogPost(db.Model):
 
 
 # TODO: Create a User table for all your registered users.
+class User(db.Model):
+    __tablename__ = 'users'
+    email = db.Column(db.String(250), primary_key=True)
+    name = db.Column(db.String(250), nullable=False)
+    password = db.Column(db.String(250), nullable=False)
 
 
 # CREATE TABLE SCHEMAS IN DB. COMMENT OUT AFTER FIRST RUN
@@ -52,15 +57,31 @@ class BlogPost(db.Model):
 
 
 # TODO: Use Werkzeug to hash the user's password when creating a new user.
-@app.route('/register')
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    return render_template("register.html")
+    register_form = RegisterForm()
+    if register_form.validate_on_submit():
+        # Hash password
+        password_hash = generate_password_hash(
+            password=register_form.password.data,
+            method='pbkdf2:sha256', salt_length=8
+        )
+        # Create new User obj
+        new_user = User(
+            email=register_form.email.data,
+            name=register_form.name.data,
+            password=password_hash
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('get_all_posts'))
+    return render_template('register.html', form=register_form)
 
 
 # TODO: Retrieve a user from the database based on their email.
 @app.route('/login')
 def login():
-    return render_template("login.html")
+    return render_template('login.html')
 
 
 @app.route('/logout')
@@ -72,14 +93,14 @@ def logout():
 def get_all_posts():
     result = db.session.execute(db.select(BlogPost))
     posts = result.scalars().all()
-    return render_template("index.html", all_posts=posts)
+    return render_template('index.html', all_posts=posts)
 
 
 # TODO: Allow logged-in users to comment on posts
-@app.route("/post/<int:post_id>")
+@app.route('/post/<int:post_id>')
 def show_post(post_id):
     requested_post = db.get_or_404(BlogPost, post_id)
-    return render_template("post.html", post=requested_post)
+    return render_template('post.html', post=requested_post)
 
 
 # TODO: Use a decorator so only an admin user can create a new post
@@ -151,5 +172,5 @@ def contact():
     return render_template('contact.html', message_sent=False)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True, port=5002)
