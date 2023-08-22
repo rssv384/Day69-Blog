@@ -12,8 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
-# Import your forms from the forms.py
-from forms import NewPostForm, RegisterForm
+from forms import NewPostForm, RegisterForm, LoginForm
 
 # SETUP FLASK APP
 app = Flask(__name__)
@@ -22,7 +21,15 @@ Bootstrap5(app)
 ckeditor = CKEditor()
 ckeditor.init_app(app)
 
-# TODO: Configure Flask-Login
+# CONFIGURE FLASK-LOGIN
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+# Create user_loader callback
+@login_manager.user_loader
+def load_user(user_email: int):
+    return db.get_or_404(User, user_email)
 
 
 # CONNECT TO DB
@@ -43,12 +50,17 @@ class BlogPost(db.Model):
     img_url = db.Column(db.String(250), nullable=False)
 
 
-# TODO: Create a User table for all your registered users.
-class User(db.Model):
+# Create a User table with UserMixin.
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     email = db.Column(db.String(250), primary_key=True)
     name = db.Column(db.String(250), nullable=False)
     password = db.Column(db.String(250), nullable=False)
+
+    # Override UserMixin get_id() method to return the User email
+    # instead when login_user() is called.
+    def get_id(self):
+        return self.email
 
 
 # CREATE TABLE SCHEMAS IN DB. COMMENT OUT AFTER FIRST RUN
@@ -56,7 +68,16 @@ class User(db.Model):
 #     db.create_all()
 
 
-# TODO: Use Werkzeug to hash the user's password when creating a new user.
+# APP ROUTES
+# Homepage
+@app.route('/')
+def get_all_posts():
+    result = db.session.execute(db.select(BlogPost))
+    posts = result.scalars().all()
+    return render_template('index.html', all_posts=posts)
+
+
+# New user registration
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     register_form = RegisterForm()
@@ -66,7 +87,6 @@ def register():
             password=register_form.password.data,
             method='pbkdf2:sha256', salt_length=8
         )
-        # Create new User obj
         new_user = User(
             email=register_form.email.data,
             name=register_form.name.data,
@@ -74,26 +94,37 @@ def register():
         )
         db.session.add(new_user)
         db.session.commit()
+
+        # Login user after registration
+        login_user(new_user)
+        # Redirect to homepage
         return redirect(url_for('get_all_posts'))
     return render_template('register.html', form=register_form)
 
 
-# TODO: Retrieve a user from the database based on their email.
-@app.route('/login')
+# User login
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login.html')
+    login_form = LoginForm()
+    if login_form.validate_on_submit():
+        email = login_form.email.data
+        password = login_form.password.data
+        # Get user by email
+        result = db.session.execute(
+            db.select(User).where(User.email == email))
+        user = result.scalar()
+        # Validate that password input corresponds to password hash in DB
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('get_all_posts'))
+    return render_template('login.html', form=login_form)
 
 
+# Logout
 @app.route('/logout')
 def logout():
+    logout_user()
     return redirect(url_for('get_all_posts'))
-
-
-@app.route('/')
-def get_all_posts():
-    result = db.session.execute(db.select(BlogPost))
-    posts = result.scalars().all()
-    return render_template('index.html', all_posts=posts)
 
 
 # TODO: Allow logged-in users to comment on posts

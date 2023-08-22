@@ -4,6 +4,7 @@ from wtforms import PasswordField, StringField, SubmitField
 from wtforms.validators import URL, DataRequired, Email, Length
 
 
+# Create new post form
 class NewPostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     subtitle = StringField('Subtitle', validators=[DataRequired()])
@@ -14,7 +15,7 @@ class NewPostForm(FlaskForm):
     submit = SubmitField('Submit Post')
 
 
-# TODO: Create a RegisterForm to register new users
+# Registration form
 class RegisterForm(FlaskForm):
     email = StringField('E-mail', validators=[DataRequired(), Email()])
     name = StringField('Name', validators=[DataRequired()])
@@ -23,7 +24,11 @@ class RegisterForm(FlaskForm):
     submit = SubmitField('Register')
 
 
-# TODO: Create a LoginForm to login existing users
+# Login form
+class LoginForm(FlaskForm):
+    email = StringField('E-mail', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Log In')
 
 
 # TODO: Create a CommentForm so users can leave comments below posts
