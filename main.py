@@ -73,7 +73,7 @@ def admin_only(function):
     @wraps(function)
     def decorated_function(*args, **kwargs):
         # If current user is not admin or authenticated, abort with 403 error
-        if not current_user.is_authenticated or current_user.email != 'sample@gmail.com':
+        if current_user.is_anonymous or current_user.email != 'sample@gmail.com':
             return abort(code=403)
         # Otherwise, call route function
         return function(*args, **kwargs)
