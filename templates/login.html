@@ -22,8 +22,15 @@
 <main class="mb-4">
 	<div class="container">
 		<div class="row">
-			<!-- TODO: add a flash message here for users registering twice -->
 			<div class="col-lg-8 col-md-10 mx-auto">
+				<!-- Flash messages for incorrect e-mail or password -->
+				{% with messages = get_flashed_messages() %}
+					{% if messages %}
+						{% for msg in messages %}
+							<p class="flash">{{ msg }}</p>
+						{% endfor %}
+					{% endif %}
+				{% endwith %}
 				<!--Render login form-->
 				{{ render_form(form) }}
 			</div>

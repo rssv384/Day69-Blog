@@ -82,6 +82,13 @@ def get_all_posts():
 def register():
     register_form = RegisterForm()
     if register_form.validate_on_submit():
+        # Check that the email isn't already in the DB
+        result = db.session.execute(
+            db.select(User).where(User.email == register_form.email.data))
+        user = result.scalar()
+        if user:
+            flash('E-mail has already been registered.')
+            return redirect(url_for('login'))
         # Hash password
         password_hash = generate_password_hash(
             password=register_form.password.data,
@@ -113,10 +120,17 @@ def login():
         result = db.session.execute(
             db.select(User).where(User.email == email))
         user = result.scalar()
-        # Validate that password input corresponds to password hash in DB
-        if user and check_password_hash(user.password, password):
+        # Check for e-mail not in DB or incorrect password, else login
+        if user is None:
+            flash("E-mail doesn't exist. Please, try again.")
+            return redirect(url_for('login'))
+        elif not check_password_hash(user.password, password):
+            flash('Incorrect password. Please, try again.')
+            return redirect(url_for('login'))
+        else:
             login_user(user)
             return redirect(url_for('get_all_posts'))
+        
     return render_template('login.html', form=login_form)
 
 

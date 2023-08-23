@@ -23,6 +23,14 @@
 	<div class="container">
 		<div class="row">
 			<div class="col-lg-8 col-md-10 mx-auto">
+			<!---Flash message when user tries to register an e-mail twice--->
+				{% with messages = get_flashed_messages() %}
+					{% if messages %}
+						{% for msg in messages %}
+							<p class="flash">{{ msg }}</p>
+						{% endfor %}
+					{% endif %}
+				{% endwith %}
 				<!-- Render registration form-->
 				{{ render_form(form) }}
 			</div>
