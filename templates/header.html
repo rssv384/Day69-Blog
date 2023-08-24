@@ -67,7 +67,7 @@
 						>
 					</li>
 					<!-- Only show Login/Register if user is logged out. Otherwise show "Log Out" -->
-					{% if not logged_in %}
+					{% if not current_user.is_authenticated %}
 					<li class="nav-item">
 						<a
 							class="nav-link px-lg-3 py-3 py-lg-4"
