@@ -25,6 +25,17 @@ ckeditor.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+# CONFIG GRAVATAR
+# Source: https://flask-gravatar.readthedocs.io/en/latest/#usage
+gravatar = Gravatar(app,
+                    size=100,
+                    rating='g',
+                    default='retro',
+                    force_default=False,
+                    force_lower=False,
+                    use_ssl=False,
+                    base_url=None)
+
 
 # Create user_loader callback
 @login_manager.user_loader
